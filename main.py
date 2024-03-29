@@ -33,7 +33,7 @@ if levels == [{}]:
              "start": (3, 3),
              "wall": [[1, 1, 1, 1, 1],
                       [1, 0, 0, 0, 1],
-                      [1, 0, 0, 0, 1],
+                      [1, 0, 0, 0, 0],
                       [1, 0, 0, 0, 1],
                       [1, 1, 1, 1, 1]],
              "tile": [[0, 0, 0, 0, 0],
@@ -51,7 +51,7 @@ pygame.init()
 done = False
 clock = pygame.time.Clock()
 size = (80, 60)
-scale = 10
+scale = 12
 moving = ((0, 0), None)
 keys = []
 display_screen = pygame.display.set_mode((size[0]*scale, size[1]*scale))
@@ -83,7 +83,7 @@ async def main():
             if moving[0] == (0, 0):
                 if key == pygame.K_RIGHT:
                     if level["wall"][player_loc[1]-1][player_loc[0]] == 0:
-                        moving = ((8, moving[0][1]), None)
+                        moving = ((BLOCK_SIZE, moving[0][1]), None)
                         player_loc = (player_loc[0] + 1, player_loc[1])
                         position = 10
                     else:
@@ -91,7 +91,7 @@ async def main():
                         position = 9
                 elif key == pygame.K_LEFT:
                     if level["wall"][player_loc[1] - 1][player_loc[0] - 2] == 0:
-                        moving = ((-8, moving[0][1]), None)
+                        moving = ((-BLOCK_SIZE, moving[0][1]), None)
                         player_loc = (player_loc[0] - 1, player_loc[1])
                         position = 7
                     else:
@@ -101,18 +101,18 @@ async def main():
                     if level["wall"][player_loc[1]][player_loc[0] - 1] == 0:
                         moving = ((moving[0][0], BLOCK_SIZE), None)
                         player_loc = (player_loc[0], player_loc[1] + 1)
-                        position = 4
+                        position = 1
                     else:
                         moving = ((moving[0][0], -1), None)
-                        position = 3
+                        position = 0
                 elif key == pygame.K_UP:
                     if level["wall"][player_loc[1]-2][player_loc[0] - 1] == 0:
                         moving = ((moving[0][0], -BLOCK_SIZE), None)
                         player_loc = (player_loc[0], player_loc[1] - 1)
-                        position = 1
+                        position = 4
                     else:
                         moving = ((moving[0][0], 1), None)
-                        position = 0
+                        position = 3
         game_screen.blit(level_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0][0],
                                         size[1] // 2 - (player_loc[1] - 0.5) * BLOCK_SIZE + moving[0][1]))
         image = round((abs(moving[0][0]+moving[0][1]) % 8)//4)
