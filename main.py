@@ -115,7 +115,7 @@ async def main():
                             moving = (moving[0], MOVEMENT_SPEED)
         game_screen.blit(level_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0],
                                         size[1] // 2 - (player_loc[1] - 0.5) * BLOCK_SIZE + moving[1]))
-        image = round((abs(moving[0]+moving[1]) % 4 * MOVEMENT_SPEED)//MOVEMENT_SPEED)
+        image = round((abs(moving[0]+moving[1])//MOVEMENT_SPEED) % 4) + 1
         if moving == (0, 0):
             image = 0
         image += position * 5
