@@ -19,7 +19,8 @@ def draw_level_objects():
                 objects_screen.blit(pygame.image.load(f"images/wall/{level['wall'][y][x]-1}.png"), (x*BLOCK_SIZE, y*BLOCK_SIZE))
 
 
-BLOCK_SIZE = 8
+BLOCK_SIZE = 16
+MOVEMENT_SPEED = 2
 editor = False
 levels = []
 with open("levels.json", "r") as f:
@@ -49,8 +50,8 @@ pygame.init()
 
 done = False
 clock = pygame.time.Clock()
-size = (80, 60)
-scale = 12
+size = (10*BLOCK_SIZE, 6*BLOCK_SIZE)
+scale = 80//BLOCK_SIZE
 moving = (0, 0)
 keys = []
 display_screen = pygame.display.set_mode((size[0]*scale, size[1]*scale))
@@ -82,57 +83,53 @@ async def main():
             if moving == (0, 0):
                 if key == pygame.K_RIGHT:
                     if player_loc[0] < level["size"][0]:
+                        position = 1
                         if level["wall"][player_loc[1]-1][player_loc[0]] == 0:
-                            moving = ((BLOCK_SIZE-1), moving[1])
+                            moving = (BLOCK_SIZE, moving[1])
                             player_loc = (player_loc[0] + 1, player_loc[1])
-                            position = 10
                         else:
-                            moving = (-1, moving[1])
-                            position = 9
+                            moving = (-MOVEMENT_SPEED, moving[1])
                 elif key == pygame.K_LEFT:
                     if player_loc[0] > 1:
+                        position = 2
                         if level["wall"][player_loc[1] - 1][player_loc[0] - 2] == 0:
-                            moving = (-(BLOCK_SIZE-1), moving[1])
+                            moving = (-BLOCK_SIZE, moving[1])
                             player_loc = (player_loc[0] - 1, player_loc[1])
-                            position = 7
                         else:
-                            moving = (1, moving[1])
-                            position = 6
+                            moving = (MOVEMENT_SPEED, moving[1])
                 elif key == pygame.K_DOWN:
                     if player_loc[1] < level["size"][1]:
+                        position = 0
                         if level["wall"][player_loc[1]][player_loc[0] - 1] == 0:
-                            moving = (moving[0], (BLOCK_SIZE-1))
+                            moving = (moving[0], BLOCK_SIZE)
                             player_loc = (player_loc[0], player_loc[1] + 1)
-                            position = 1
                         else:
-                            moving = (moving[0], -1)
-                            position = 0
+                            moving = (moving[0], -MOVEMENT_SPEED)
                 elif key == pygame.K_UP:
                     if player_loc[1] > 1:
+                        position = 3
                         if level["wall"][player_loc[1]-2][player_loc[0] - 1] == 0:
-                            moving = (moving[0], -(BLOCK_SIZE-1))
+                            moving = (moving[0], -BLOCK_SIZE)
                             player_loc = (player_loc[0], player_loc[1] - 1)
-                            position = 4
                         else:
-                            moving = (moving[0], 1)
-                            position = 3
+                            moving = (moving[0], MOVEMENT_SPEED)
         game_screen.blit(level_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0],
                                         size[1] // 2 - (player_loc[1] - 0.5) * BLOCK_SIZE + moving[1]))
-        image = round((abs(moving[0]+moving[1]) % 4)//2)
+        image = round((abs(moving[0]+moving[1]) % 4 * MOVEMENT_SPEED)//MOVEMENT_SPEED)
         if moving == (0, 0):
-            position = position//3*3
-        image += position
+            image = 0
+        image += position * 5
         game_screen.blit(pygame.image.load(f"images/player/{image}.png"),
                          (size[0]//2-0.5*BLOCK_SIZE, size[1]//2-0.5*BLOCK_SIZE))
         game_screen.blit(objects_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0],
-                                          size[1] // 2 - (player_loc[1]) * BLOCK_SIZE + moving[1]))
+                                         size[1] // 2 - (player_loc[1]) * BLOCK_SIZE + moving[1]))
         display_screen.blit(pygame.transform.scale(game_screen, (size[0]*scale, size[1]*scale)), (0, 0))
         pygame.display.flip()
-        clock.tick(40)
+        clock.tick(60/MOVEMENT_SPEED)
         if moving[0] != 0:
-            moving = (moving[0]-1*moving[0]/abs(moving[0]), moving[1])
+            moving = (moving[0] - MOVEMENT_SPEED * moving[0] / abs(moving[0]), moving[1])
         if moving[1] != 0:
-            moving = (moving[0], moving[1] - 1 * moving[1] / abs(moving[1]))
+            moving = (moving[0], moving[1] - MOVEMENT_SPEED * moving[1] / abs(moving[1]))
 
 if __name__ == "__main__":
     asyncio.run(main())
