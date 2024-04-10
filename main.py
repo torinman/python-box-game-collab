@@ -75,7 +75,7 @@ if levels == [{}]:
                       [0, 1, 1, 1, 1, 1, 1],
                       [0, 1, 1, 1, 1, 1, 0],
                       [0, 0, 0, 1, 0, 0, 0]],
-             "objs": [["box", (2, 2), [(0, 0), (0, 1)], 0, True], ["box", (3, 4), [(0, 0)], 0, True], ["box", (4, 3), [(0, 0), (1, 0)], 0, True]]}
+             "objs": [["box", (2, 2), [(0, 0), (0, 1)], 0, False], ["box", (3, 4), [(0, 0)], 0, False], ["box", (4, 3), [(0, 0), (1, 0)], 0, False]]}
 else:
     level = levels[0]
 level_reset = level
@@ -122,10 +122,13 @@ async def main():
                         if check is not False:
                             moving = (BLOCK_SIZE, moving[1])
                             player_loc = (player_loc[0] + 1, player_loc[1])
-                            for object in check:
-                                index = level["objs"].index(object)
-                                level["objs"][index][1] = (level["objs"][index][1][0]+1, level["objs"][index][1][1])
-                                level["objs"][index][4] = True
+                            for object in level["objs"]:
+                                if object in check:
+                                    index = level["objs"].index(object)
+                                    level["objs"][index][1] = (level["objs"][index][1][0]+1, level["objs"][index][1][1])
+                                    level["objs"][index][4] = True
+                                else:
+                                    object[4] = False
                         else:
                             moving = (-MOVEMENT_SPEED*WALL_BUMP, moving[1])
                 elif key == pygame.K_LEFT:
@@ -135,10 +138,13 @@ async def main():
                         if check is not False:
                             moving = (-BLOCK_SIZE, moving[1])
                             player_loc = (player_loc[0] - 1, player_loc[1])
-                            for object in check:
-                                index = level["objs"].index(object)
-                                level["objs"][index][1] = (level["objs"][index][1][0] - 1, level["objs"][index][1][1])
-                                level["objs"][index][4] = True
+                            for object in level["objs"]:
+                                if object in check:
+                                    index = level["objs"].index(object)
+                                    level["objs"][index][1] = (level["objs"][index][1][0] - 1, level["objs"][index][1][1])
+                                    level["objs"][index][4] = True
+                                else:
+                                    object[4] = False
                         else:
                             moving = (MOVEMENT_SPEED*WALL_BUMP, moving[1])
                 elif key == pygame.K_DOWN:
@@ -148,10 +154,13 @@ async def main():
                         if check is not False:
                             moving = (moving[0], BLOCK_SIZE)
                             player_loc = (player_loc[0], player_loc[1] + 1)
-                            for object in check:
-                                index = level["objs"].index(object)
-                                level["objs"][index][1] = (level["objs"][index][1][0], level["objs"][index][1][1] + 1)
-                                level["objs"][index][4] = True
+                            for object in level["objs"]:
+                                if object in check:
+                                    index = level["objs"].index(object)
+                                    level["objs"][index][1] = (level["objs"][index][1][0], level["objs"][index][1][1] + 1)
+                                    level["objs"][index][4] = True
+                                else:
+                                    object[4] = False
                         else:
                             moving = (moving[0], -MOVEMENT_SPEED*WALL_BUMP)
                 elif key == pygame.K_UP:
@@ -161,10 +170,13 @@ async def main():
                         if check is not False:
                             moving = (moving[0], -BLOCK_SIZE)
                             player_loc = (player_loc[0], player_loc[1] - 1)
-                            for object in check:
-                                index = level["objs"].index(object)
-                                level["objs"][index][1] = (level["objs"][index][1][0], level["objs"][index][1][1] - 1)
-                                level["objs"][index][4] = True
+                            for object in level["objs"]:
+                                if object in check:
+                                    index = level["objs"].index(object)
+                                    level["objs"][index][1] = (level["objs"][index][1][0], level["objs"][index][1][1] - 1)
+                                    level["objs"][index][4] = True
+                                else:
+                                    object[4] = False
                         else:
                             moving = (moving[0], MOVEMENT_SPEED*WALL_BUMP)
         game_screen.blit(level_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0],
@@ -172,8 +184,6 @@ async def main():
         image = round((((abs(moving[0]+moving[1])//MOVEMENT_SPEED) % ANIMATION_STEPS) * -1) + ANIMATION_STEPS)
         if moving == (0, 0):
             image = 0
-            for object in level["objs"]:
-                object[4] = False
         image += position * ANIMATION_STEPS + position
         game_screen.blit(pygame.image.load(f"images/player/{image}.png"),
                          (size[0]//2-0.5*BLOCK_SIZE, size[1]//2-0.5*BLOCK_SIZE))
