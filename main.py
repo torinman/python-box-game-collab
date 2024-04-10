@@ -10,13 +10,41 @@ def draw_level_tiles():
             level_screen.blit(pygame.image.load(f"images/tiles/{level['tile'][y][x]}.png"),
                               (x*BLOCK_SIZE, y*BLOCK_SIZE))
 
+def check_obj(loc):
+    for object in level["objs"]:
+        for part in object[2]:
+            if part[1] + object[1][1] == loc[1] and part[0] + object[1][0] == loc[0]:
+                return object
+
+def check_push(loc, v):
+    objects = []
+    locations = [] + [loc]
+    new_locations = []
+    while locations != []:
+        for location in locations:
+            check = check_obj((location[0]+v[0], location[1]+v[1]))
+            if check is not None and not check in objects:
+                objects += [check]
+                for part in check[2]:
+                    new_locations += [(part[0] + check[1][0], part[1] + check[1][1])]
+            if level["wall"][location[1]+v[1]][location[0]+v[0]] != 0:
+                return False
+        locations = new_locations[:]
+        new_locations = []
+    return objects
 
 def draw_level_objects():
     global level, objects_screen
     for y in range(level["size"][1]):
+        for object in level["objs"]:
+            for part in object[2]:
+                if part[1] + object[1][1] == y:
+                    objects_screen.blit(pygame.image.load(f"images/{object[0]}/{object[3]}/{object[2].index(part)}.png"),
+                                        (part[0] + object[1][0] * BLOCK_SIZE + object[4]*moving[0]*-1, y * BLOCK_SIZE + object[4]*moving[1]*-1))
         for x in range(level["size"][0]):
             if level["wall"][y][x] != 0:
-                objects_screen.blit(pygame.image.load(f"images/wall/{level['wall'][y][x]-1}.png"), (x*BLOCK_SIZE, y*BLOCK_SIZE))
+                objects_screen.blit(pygame.image.load(f"images/wall/{level['wall'][y][x]-1}.png"),
+                                    (x*BLOCK_SIZE, y*BLOCK_SIZE))
 
 
 BLOCK_SIZE = 16
@@ -43,7 +71,7 @@ if levels == [{}]:
                       [1, 1, 1, 1, 1],
                       [0, 1, 1, 1, 0],
                       [0, 0, 1, 0, 0]],
-             "objs": []}
+             "objs": [["box", (2, 2), [(0, 0), (0, 1)], 0, True]]}
 else:
     level = levels[0]
 level_reset = level
@@ -86,33 +114,53 @@ async def main():
                 if key == pygame.K_RIGHT:
                     if player_loc[0] < level["size"][0]:
                         position = 1
-                        if level["wall"][player_loc[1]-1][player_loc[0]] == 0:
+                        check = check_push((player_loc[0]-1, player_loc[1]-1), (1, 0))
+                        if check is not False:
                             moving = (BLOCK_SIZE, moving[1])
                             player_loc = (player_loc[0] + 1, player_loc[1])
+                            for object in check:
+                                index = level["objs"].index(object)
+                                level["objs"][index][1] = (level["objs"][index][1][0]+1, level["objs"][index][1][1])
+                                level["objs"][index][4] = True
                         else:
                             moving = (-MOVEMENT_SPEED*WALL_BUMP, moving[1])
                 elif key == pygame.K_LEFT:
                     if player_loc[0] > 1:
                         position = 2
-                        if level["wall"][player_loc[1] - 1][player_loc[0] - 2] == 0:
+                        check = check_push((player_loc[0] - 1, player_loc[1] - 1), (-1, 0))
+                        if check is not False:
                             moving = (-BLOCK_SIZE, moving[1])
                             player_loc = (player_loc[0] - 1, player_loc[1])
+                            for object in check:
+                                index = level["objs"].index(object)
+                                level["objs"][index][1] = (level["objs"][index][1][0] - 1, level["objs"][index][1][1])
+                                level["objs"][index][4] = True
                         else:
                             moving = (MOVEMENT_SPEED*WALL_BUMP, moving[1])
                 elif key == pygame.K_DOWN:
                     if player_loc[1] < level["size"][1]:
                         position = 0
-                        if level["wall"][player_loc[1]][player_loc[0] - 1] == 0:
+                        check = check_push((player_loc[0] - 1, player_loc[1] - 1), (0, 1))
+                        if check is not False:
                             moving = (moving[0], BLOCK_SIZE)
                             player_loc = (player_loc[0], player_loc[1] + 1)
+                            for object in check:
+                                index = level["objs"].index(object)
+                                level["objs"][index][1] = (level["objs"][index][1][0], level["objs"][index][1][1] + 1)
+                                level["objs"][index][4] = True
                         else:
                             moving = (moving[0], -MOVEMENT_SPEED*WALL_BUMP)
                 elif key == pygame.K_UP:
                     if player_loc[1] > 1:
                         position = 3
-                        if level["wall"][player_loc[1]-2][player_loc[0] - 1] == 0:
+                        check = check_push((player_loc[0] - 1, player_loc[1] - 1), (0, -1))
+                        if check is not False:
                             moving = (moving[0], -BLOCK_SIZE)
                             player_loc = (player_loc[0], player_loc[1] - 1)
+                            for object in check:
+                                index = level["objs"].index(object)
+                                level["objs"][index][1] = (level["objs"][index][1][0], level["objs"][index][1][1] - 1)
+                                level["objs"][index][4] = True
                         else:
                             moving = (moving[0], MOVEMENT_SPEED*WALL_BUMP)
         game_screen.blit(level_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0],
@@ -120,11 +168,13 @@ async def main():
         image = round((((abs(moving[0]+moving[1])//MOVEMENT_SPEED) % ANIMATION_STEPS) * -1) + ANIMATION_STEPS)
         if moving == (0, 0):
             image = 0
+            for object in level["objs"]:
+                object[4] = False
         image += position * ANIMATION_STEPS + position
         game_screen.blit(pygame.image.load(f"images/player/{image}.png"),
                          (size[0]//2-0.5*BLOCK_SIZE, size[1]//2-0.5*BLOCK_SIZE))
         game_screen.blit(objects_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0],
-                                         size[1] // 2 - (player_loc[1]) * BLOCK_SIZE + moving[1]))
+                                          size[1] // 2 - (player_loc[1]) * BLOCK_SIZE + moving[1]))
         display_screen.blit(pygame.transform.scale(game_screen, (size[0]*scale, size[1]*scale)), (0, 0))
         pygame.display.flip()
         clock.tick(60/MOVEMENT_SPEED)
