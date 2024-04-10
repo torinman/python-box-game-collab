@@ -40,7 +40,7 @@ def draw_level_objects():
             for part in object[2]:
                 if part[1] + object[1][1] == y:
                     objects_screen.blit(pygame.image.load(f"images/{object[0]}/{object[3]}/{object[2].index(part)}.png"),
-                                        (part[0] + object[1][0] * BLOCK_SIZE + object[4]*moving[0]*-1, y * BLOCK_SIZE + object[4]*moving[1]*-1))
+                                        ((part[0] + object[1][0]) * BLOCK_SIZE + object[4]*moving[0]*-1, (part[1] + object[1][1]) * BLOCK_SIZE + object[4]*moving[1]*-1))
         for x in range(level["size"][0]):
             if level["wall"][y][x] != 0:
                 objects_screen.blit(pygame.image.load(f"images/wall/{level['wall'][y][x]-1}.png"),
@@ -59,19 +59,23 @@ with open("levels.json", "r") as f:
 print(levels)
 if levels == [{}]:
     editor = True
-    level = {"size": (5, 5),
-             "start": (3, 3),
-             "wall": [[1, 1, 0, 1, 1],
-                      [1, 0, 0, 0, 1],
-                      [0, 0, 0, 0, 0],
-                      [1, 0, 0, 0, 1],
-                      [1, 1, 0, 1, 1]],
-             "tile": [[0, 0, 1, 0, 0],
-                      [0, 1, 1, 1, 0],
-                      [1, 1, 1, 1, 1],
-                      [0, 1, 1, 1, 0],
-                      [0, 0, 1, 0, 0]],
-             "objs": [["box", (2, 2), [(0, 0), (0, 1)], 0, True]]}
+    level = {"size": (7, 7),
+             "start": (4, 4),
+             "wall": [[1, 1, 1, 0, 1, 1, 1],
+                      [1, 0, 0, 0, 0, 0, 1],
+                      [1, 0, 0, 0, 0, 0, 0],
+                      [1, 0, 0, 0, 0, 0, 0],
+                      [1, 0, 0, 0, 0, 0, 0],
+                      [1, 0, 0, 0, 0, 0, 1],
+                      [1, 1, 1, 0, 1, 1, 1]],
+             "tile": [[0, 0, 0, 1, 0, 0, 0],
+                      [0, 1, 1, 1, 1, 1, 0],
+                      [0, 1, 1, 1, 1, 1, 1],
+                      [0, 1, 1, 1, 1, 1, 1],
+                      [0, 1, 1, 1, 1, 1, 1],
+                      [0, 1, 1, 1, 1, 1, 0],
+                      [0, 0, 0, 1, 0, 0, 0]],
+             "objs": [["box", (2, 2), [(0, 0), (0, 1)], 0, True], ["box", (3, 4), [(0, 0)], 0, True], ["box", (4, 3), [(0, 0), (1, 0)], 0, True]]}
 else:
     level = levels[0]
 level_reset = level
