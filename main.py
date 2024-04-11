@@ -33,6 +33,22 @@ def check_push(loc, v):
         new_locations = []
     return objects
 
+def get_wall_tile(location, kind):
+    tile = 0
+    if location[1] != 0:
+        if level["wall"][location[1]-1][location[0]] == kind:
+            tile += 1
+    if location[1] != level["size"][1]-1:
+        if level["wall"][location[1]+1][location[0]] == kind:
+            tile += 2
+    if location[0] != 0:
+        if level["wall"][location[1]][location[0]-1] == kind:
+            tile += 4
+    if location[0] != level["size"][0]-1:
+        if level["wall"][location[1]][location[0]+1] == kind:
+            tile += 8
+    return tile
+
 def draw_level_objects():
     global level, objects_screen
     for y in range(level["size"][1]):
@@ -43,7 +59,7 @@ def draw_level_objects():
                                         ((part[0] + object[1][0]) * BLOCK_SIZE + object[4]*moving[0]*-1, (part[1] + object[1][1]) * BLOCK_SIZE + object[4]*moving[1]*-1))
         for x in range(level["size"][0]):
             if level["wall"][y][x] != 0:
-                objects_screen.blit(pygame.image.load(f"images/wall/{level['wall'][y][x]-1}.png"),
+                objects_screen.blit(pygame.image.load(f"images/wall/{level['wall'][y][x]-1}/{get_wall_tile((x, y), level['wall'][y][x])}.png"),
                                     (x*BLOCK_SIZE, y*BLOCK_SIZE))
 
 
@@ -57,6 +73,7 @@ with open("levels.json", "r") as f:
     for line in f.readlines():
         levels.append(json.loads(line))
 print(levels)
+level_start = 0
 if levels == [{}]:
     editor = True
     level = {"size": (7, 7),
@@ -75,17 +92,17 @@ if levels == [{}]:
                       [0, 1, 1, 1, 1, 1, 1],
                       [0, 1, 1, 1, 1, 1, 0],
                       [0, 0, 0, 1, 0, 0, 0]],
-             "objs": [["box", (2, 2), [(0, 0), (0, 1)], 0, False], ["box", (3, 4), [(0, 0)], 0, False], ["box", (4, 3), [(0, 0), (1, 0)], 0, False]]}
+             "objs": [["box", (2, 2), [(0, 0), (0, 1), (-1, 1), (-1, 2)], 0, False], ["box", (3, 4), [(0, 0)], 0, False], ["box", (4, 3), [(0, 0), (1, 0)], 0, False]]}
 else:
-    level = levels[0]
+    level = levels[level_start]
 level_reset = level
 
 pygame.init()
 
 done = False
 clock = pygame.time.Clock()
-size = (10*BLOCK_SIZE, 6*BLOCK_SIZE)
-scale = 80//BLOCK_SIZE
+scale = 48//BLOCK_SIZE
+size = (800//scale, 600//scale)
 moving = (0, 0)
 keys = []
 display_screen = pygame.display.set_mode((size[0]*scale, size[1]*scale))
