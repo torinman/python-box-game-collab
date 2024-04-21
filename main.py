@@ -123,7 +123,6 @@ async def main():
         game_screen.fill((0, 0, 0))
         objects_screen.fill((0, 0, 0, 0))
         draw_level_objects()
-        await asyncio.sleep(0)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
@@ -212,6 +211,7 @@ async def main():
                                           size[1] // 2 - (player_loc[1]) * BLOCK_SIZE + moving[1]))
         display_screen.blit(pygame.transform.scale(game_screen, (size[0]*scale, size[1]*scale)), (0, 0))
         pygame.display.flip()
+        await asyncio.sleep(0)
         clock.tick(60/MOVEMENT_SPEED)
         if moving[0] != 0:
             moving = (moving[0] - MOVEMENT_SPEED * moving[0] / abs(moving[0]), moving[1])
