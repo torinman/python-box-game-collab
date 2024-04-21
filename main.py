@@ -102,22 +102,23 @@ pygame.init()
 done = False
 clock = pygame.time.Clock()
 scale = 48//BLOCK_SIZE
-size = (800//scale, 600//scale)
 moving = (0, 0)
 keys = []
-display_screen = pygame.display.set_mode((size[0]*scale, size[1]*scale))
+display_screen = pygame.display.set_mode((800, 600), flags=pygame.RESIZABLE)
+size = (pygame.display.get_window_size()[0]//scale, pygame.display.get_window_size()[1]//scale)
 game_screen = pygame.Surface(size)
 level_screen = pygame.Surface((level["size"][1]*BLOCK_SIZE, level["size"][0]*BLOCK_SIZE))
 objects_screen = pygame.Surface((level["size"][0]*BLOCK_SIZE, (level["size"][1] + 0.5)*BLOCK_SIZE))
 objects_screen = objects_screen.convert_alpha()
 player_loc = level["start"]
+pygame.display.set_caption("Mouse Movers")
 
 draw_level_tiles()
 position = 0
 
 
 async def main():
-    global done, moving, player_loc, position
+    global done, moving, player_loc, position, game_screen, level_screen, size
     while not done:
         game_screen.fill((0, 0, 0))
         objects_screen.fill((0, 0, 0, 0))
@@ -130,6 +131,9 @@ async def main():
                 keys.append(event.key)
             elif event.type == pygame.KEYUP:
                 keys.remove(event.key)
+            elif event.type == pygame.WINDOWRESIZED:
+                size = (pygame.display.get_window_size()[0]//scale, pygame.display.get_window_size()[1]//scale)
+                game_screen = pygame.Surface(size)
         for key in keys:
             if moving == (0, 0):
                 if key == pygame.K_RIGHT:
