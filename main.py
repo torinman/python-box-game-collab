@@ -248,7 +248,7 @@ async def main():
         display_screen.blit(pygame.transform.scale(game_screen, (size[0] * scale, size[1] * scale)), (0, 0))
         pygame.display.flip()
         await asyncio.sleep(0)
-        clock.tick(10 / MOVEMENT_SPEED)
+        clock.tick(60 / MOVEMENT_SPEED)
         if moving[0] != 0:
             moving = (moving[0] - MOVEMENT_SPEED * moving[0] / abs(moving[0]), moving[1])
             if moving[0] == 0:
