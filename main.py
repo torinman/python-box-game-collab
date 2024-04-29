@@ -142,9 +142,10 @@ async def main():
             elif event.type == pygame.KEYDOWN:
                 keys.append(event.key)
                 if event.key == pygame.K_r:
-                    level["objs"] = level_reset
+                    level["objs"] = copy.deepcopy(level_reset)u
                     draw_level_objs()
                     player_loc = level["start"]
+                    position = 0
             elif event.type == pygame.KEYUP:
                 keys.remove(event.key)
             elif event.type == pygame.WINDOWRESIZED:
