@@ -9,29 +9,8 @@ with open("levels.json", "r") as f:
         levels.append(json.loads(line))
 level_start = 0
 editor = False
-if levels == [{}]:
-    editor = True
-    level = {"size": (7, 7),
-             "start": (4, 4),
-             "wall": [[1, 1, 1, 0, 1, 1, 1],
-                      [1, 0, 0, 0, 0, 0, 1],
-                      [1, 0, 0, 0, 0, 0, 0],
-                      [1, 0, 0, 0, 0, 0, 0],
-                      [1, 0, 0, 0, 0, 0, 0],
-                      [1, 0, 0, 0, 0, 0, 1],
-                      [1, 1, 1, 0, 1, 1, 1]],
-             "tile": [[0, 0, 0, 1, 0, 0, 0],
-                      [0, 1, 1, 1, 1, 1, 0],
-                      [0, 1, 1, 1, 1, 1, 1],
-                      [0, 1, 1, 1, 1, 1, 1],
-                      [0, 1, 1, 1, 1, 1, 1],
-                      [0, 1, 1, 1, 1, 1, 0],
-                      [0, 0, 0, 1, 0, 0, 0]],
-             "objs": [["box", (2, 2), [(0, 0), (0, 1), (-1, 1), (-1, 2)], 0, False],
-                      ["box", (3, 4), [(0, 0)], 0, False], 
-                      ["box", (4, 3), [(0, 0), (1, 0)], 0, False]]}
-else:
-    level = levels[level_start]
+level = levels[level_start]
+
 
 def draw_level_tiles():
     global level, level_screen
@@ -51,21 +30,39 @@ def check_obj(loc):
 
 
 def check_push(loc, v):
+    global level
     objs = []
+    obj_changes = []
     locations = [] + [loc]
     new_locations = []
     while locations:
         for location in locations:
             check = check_obj((location[0] + v[0], location[1] + v[1]))
+            wall = True
             if check is not None and check not in objs:
                 objs += [check]
+                remove = []
                 for part in check[2]:
-                    new_locations += [(part[0] + check[1][0], part[1] + check[1][1])]
-            if level["wall"][location[1] + v[1]][location[0] + v[0]] != 0:
+                    new_location = (part[0] + check[1][0], part[1] + check[1][1])
+                    print(new_location)
+                    if [new_location[0] + v[0], new_location[1] + v[1]] in level["doors"]:
+                        remove += [part]
+                    else:
+                        new_locations += [new_location]
+                if remove:
+                    if check[5]:
+                        obj_changes += [(check, remove)]
+                        wall = False
+                    else:
+                        return False
+            if not (location[0] + v[0] >= level["size"][0] or location[1] + v[1] >= level["size"][1] or location[0] + v[0] < 0 or location[1] + v[1] < 0):
+                if level["wall"][location[1] + v[1]][location[0] + v[0]] != 0:
+                    return False
+            else:
                 return False
         locations = new_locations[:]
         new_locations = []
-    return objs
+    return objs, obj_changes
 
 
 def get_wall_tile(location, kind):
@@ -100,6 +97,41 @@ def draw_level_objs():
                 objs_screen.blit(pygame.image.load(
                     f"images/wall/{level['wall'][y][x] - 1}/{get_wall_tile((x, y), level['wall'][y][x])}.png"),
                     (x * BLOCK_SIZE, y * BLOCK_SIZE))
+
+
+def move(v, p):
+    global position, player_loc, moving, level, level_start, level_reset, history
+    position = p
+    check = check_push((player_loc[0] - 1, player_loc[1] - 1), v)
+    if check is not False:
+        moving = (BLOCK_SIZE*v[0], BLOCK_SIZE*v[1])
+        player_loc = (player_loc[0]+v[0], player_loc[1]+v[1])
+        for obj in level["objs"]:
+            if obj in check[0]:
+                index = level["objs"].index(obj)
+                for remove in check[1]:
+                    if remove[0] == obj:
+                        for r in remove[1]:
+                            level["objs"][index][2].remove(r)
+                level["objs"][index][1] = (level["objs"][index][1][0] + v[0], level["objs"][index][1][1] + v[1])
+                level["objs"][index][4] = True
+            else:
+                obj[4] = False
+        finished = True
+        for obj in level["objs"]:
+            if obj[5] and obj[2]:
+                finished = False
+        if finished:
+            level_start += 1
+            level = levels[level_start]
+            player_loc = level["start"]
+            level_reset = copy.deepcopy(level["objs"])
+            position = 0
+            history = [(copy.deepcopy(level["objs"]), player_loc, moving, position)]
+            draw_level_tiles()
+            moving = (0, 0)
+    else:
+        moving = (MOVEMENT_SPEED * WALL_BUMP * -1 * v[0], MOVEMENT_SPEED * WALL_BUMP * -1 * v[1])
 
 
 BLOCK_SIZE = 16
@@ -153,7 +185,7 @@ async def main():
                 game_screen = pygame.Surface(size)
         for key in keys:
             if moving == (0, 0):
-                if key == pygame.K_u:
+                if key == pygame.K_z or key == pygame.K_u:
                     if len(history) > 1:
                         level["objs"] = copy.deepcopy(history[-2][0])
                         for index, obj in enumerate(level["objs"]):
@@ -166,74 +198,14 @@ async def main():
                         backwards = True
                 else:
                     backwards = False
-                if key == pygame.K_RIGHT:
-                    if player_loc[0] < level["size"][0]:
-                        position = 1
-                        check = check_push((player_loc[0] - 1, player_loc[1] - 1), (1, 0))
-                        if check is not False:
-                            moving = (BLOCK_SIZE, moving[1])
-                            player_loc = (player_loc[0] + 1, player_loc[1])
-                            for obj in level["objs"]:
-                                if obj in check:
-                                    index = level["objs"].index(obj)
-                                    level["objs"][index][1] = (
-                                        level["objs"][index][1][0] + 1, level["objs"][index][1][1])
-                                    level["objs"][index][4] = True
-                                else:
-                                    obj[4] = False
-                        else:
-                            moving = (-MOVEMENT_SPEED * WALL_BUMP, moving[1])
-                elif key == pygame.K_LEFT:
-                    if player_loc[0] > 1:
-                        position = 2
-                        check = check_push((player_loc[0] - 1, player_loc[1] - 1), (-1, 0))
-                        if check is not False:
-                            moving = (-BLOCK_SIZE, moving[1])
-                            player_loc = (player_loc[0] - 1, player_loc[1])
-                            for obj in level["objs"]:
-                                if obj in check:
-                                    index = level["objs"].index(obj)
-                                    level["objs"][index][1] = (
-                                        level["objs"][index][1][0] - 1, level["objs"][index][1][1])
-                                    level["objs"][index][4] = True
-                                else:
-                                    obj[4] = False
-                        else:
-                            moving = (MOVEMENT_SPEED * WALL_BUMP, moving[1])
-                elif key == pygame.K_DOWN:
-                    if player_loc[1] < level["size"][1]:
-                        position = 0
-                        check = check_push((player_loc[0] - 1, player_loc[1] - 1), (0, 1))
-                        if check is not False:
-                            moving = (moving[0], BLOCK_SIZE)
-                            player_loc = (player_loc[0], player_loc[1] + 1)
-                            for obj in level["objs"]:
-                                if obj in check:
-                                    index = level["objs"].index(obj)
-                                    level["objs"][index][1] = (
-                                        level["objs"][index][1][0], level["objs"][index][1][1] + 1)
-                                    level["objs"][index][4] = True
-                                else:
-                                    obj[4] = False
-                        else:
-                            moving = (moving[0], -MOVEMENT_SPEED * WALL_BUMP)
-                elif key == pygame.K_UP:
-                    if player_loc[1] > 1:
-                        position = 3
-                        check = check_push((player_loc[0] - 1, player_loc[1] - 1), (0, -1))
-                        if check is not False:
-                            moving = (moving[0], -BLOCK_SIZE)
-                            player_loc = (player_loc[0], player_loc[1] - 1)
-                            for obj in level["objs"]:
-                                if obj in check:
-                                    index = level["objs"].index(obj)
-                                    level["objs"][index][1] = (
-                                        level["objs"][index][1][0], level["objs"][index][1][1] - 1)
-                                    level["objs"][index][4] = True
-                                else:
-                                    obj[4] = False
-                        else:
-                            moving = (moving[0], MOVEMENT_SPEED * WALL_BUMP)
+                if key == pygame.K_RIGHT or key == pygame.K_d:
+                    move((1, 0), 1)
+                elif key == pygame.K_LEFT or key == pygame.K_a:
+                    move((-1, 0), 2)
+                elif key == pygame.K_DOWN or key == pygame.K_s:
+                    move((0, 1), 0)
+                elif key == pygame.K_UP or key == pygame.K_w:
+                    move((0, -1), 3)
                 if player_loc != history[-1][1]:
                     history = history + [(copy.deepcopy(level["objs"]), player_loc, moving, position)]
         game_screen.blit(level_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0],
