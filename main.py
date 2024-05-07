@@ -140,6 +140,7 @@ MOVEMENT_SPEED = 4
 ANIMATION_STEPS = 4
 step_speed = 2
 WALL_BUMP = 0
+fps = 3
 
 pygame.init()
 
@@ -171,7 +172,7 @@ for i in range((ANIMATION_STEPS+1)*4):
 
 
 async def main():
-    global done, moving, player_loc, position, game_screen, level_screen, size, history, level, backwards, step_speed
+    global done, moving, player_loc, position, game_screen, level_screen, size, history, level, backwards, step_speed, fps
     while not done:
         game_screen.fill((69, 43, 63, 255))
         draw = False
@@ -197,6 +198,10 @@ async def main():
                     step_speed *= 2
                     if step_speed == 32:
                         step_speed = 1
+                elif event.key == pygame.K_p:
+                    fps += 1
+                    if fps == 6:
+                        fps = 2
                 keys.append(event.key)
             elif event.type == pygame.KEYUP:
                 keys.remove(event.key)
@@ -242,7 +247,7 @@ async def main():
         display_screen.blit(pygame.transform.scale(game_screen, (size[0] * scale, size[1] * scale)), (0, 0))
         pygame.display.flip()
         await asyncio.sleep(0)
-        clock.tick(60 / step_speed)
+        clock.tick(fps*BLOCK_SIZE / step_speed)
         if moving[0] != 0:
             moving = (moving[0] - step_speed * moving[0] / abs(moving[0]), moving[1])
             if moving[0] == 0:
