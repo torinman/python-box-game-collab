@@ -98,9 +98,14 @@ def draw_level_objs():
 
 
 def move(v, p):
-    global position, player_loc, moving, level, level_start, level_reset, history
+    global position, player_loc, moving, level, level_start, level_reset, history, finishing, finished
     position = p
     check = check_push((player_loc[0] - 1, player_loc[1] - 1), v)
+    if finishing:
+        if [player_loc[0] + v[0] - 1, player_loc[1] + v[1] - 1] in level["doors"]:
+            finished = True
+            moving = (BLOCK_SIZE * v[0], BLOCK_SIZE * v[1])
+            player_loc = (player_loc[0] + v[0], player_loc[1] + v[1])
     if check is not False:
         moving = (BLOCK_SIZE * v[0], BLOCK_SIZE * v[1])
         player_loc = (player_loc[0] + v[0], player_loc[1] + v[1])
@@ -115,24 +120,13 @@ def move(v, p):
                 level["objs"][index][4] = True
             else:
                 obj[4] = False
-        finished = True
+        finishing = True
         for obj in level["objs"]:
             if obj[5] and obj[2]:
-                finished = False
-        if finished:
-            level_start += 1
-            level = levels[level_start]
-            player_loc = level["start"]
-            level_reset = copy.deepcopy(level["objs"])
-            position = 0
-            history = [(copy.deepcopy(level["objs"]), player_loc, moving, position)]
-            draw_level_tiles()
-            moving = (0, 0)
-            objs_screen.fill((0, 0, 0, 0))
-            draw_level_objs()
-            position = 0
+                finishing = False
     else:
-        moving = (MOVEMENT_SPEED * WALL_BUMP * -1 * v[0], MOVEMENT_SPEED * WALL_BUMP * -1 * v[1])
+        if moving == (0, 0):
+            moving = (MOVEMENT_SPEED * WALL_BUMP * -1 * v[0], MOVEMENT_SPEED * WALL_BUMP * -1 * v[1])
 
 
 BLOCK_SIZE = 16
@@ -152,16 +146,21 @@ keys = []
 display_screen = pygame.display.set_mode((800, 600), flags=pygame.RESIZABLE)
 size = (pygame.display.get_window_size()[0] // scale, pygame.display.get_window_size()[1] // scale)
 game_screen = pygame.Surface(size).convert_alpha()
-level_screen = pygame.Surface((level["size"][1] * BLOCK_SIZE, level["size"][0] * BLOCK_SIZE))
+level_screen = pygame.Surface((level["size"][0] * BLOCK_SIZE, level["size"][1] * BLOCK_SIZE))
 objs_screen = pygame.Surface((level["size"][0] * BLOCK_SIZE, (level["size"][1] + 0.5) * BLOCK_SIZE))
 objs_screen = objs_screen.convert_alpha()
 objs_screen.fill((0, 0, 0, 0))
+fade_screen = pygame.Surface(size)
+fade_screen = fade_screen.convert_alpha()
+fade_screen.fill((0, 0, 0, 0))
 draw_level_objs()
 player_loc = level["start"]
 pygame.display.set_caption("Mouse Movers")
 level_reset = copy.deepcopy(level["objs"])
 position = 0
 history = [(copy.deepcopy(level["objs"]), player_loc, moving, position)]
+finished = False
+finishing = False
 
 draw_level_tiles()
 backwards = False
@@ -172,7 +171,7 @@ for i in range((ANIMATION_STEPS+1)*4):
 
 
 async def main():
-    global done, moving, player_loc, position, game_screen, level_screen, size, history, level, backwards, step_speed, fps
+    global done, moving, player_loc, position, game_screen, level_screen, size, history, level, backwards, step_speed, fps, level_start, finished, level_reset
     while not done:
         game_screen.fill((69, 43, 63, 255))
         draw = False
@@ -243,11 +242,7 @@ async def main():
         game_screen.blit(player_images[image],
                          (size[0] // 2 - 0.5 * BLOCK_SIZE, size[1] // 2 - 0.5 * BLOCK_SIZE))
         game_screen.blit(objs_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0],
-                                       size[1] // 2 - (player_loc[1]) * BLOCK_SIZE + moving[1]))
-        display_screen.blit(pygame.transform.scale(game_screen, (size[0] * scale, size[1] * scale)), (0, 0))
-        pygame.display.flip()
-        await asyncio.sleep(0)
-        clock.tick(fps*BLOCK_SIZE / step_speed)
+                                      size[1] // 2 - (player_loc[1]) * BLOCK_SIZE + moving[1]))
         if moving[0] != 0:
             moving = (moving[0] - step_speed * moving[0] / abs(moving[0]), moving[1])
             if moving[0] == 0:
@@ -262,7 +257,27 @@ async def main():
                     obj[4] = False
                     objs_screen.fill((0, 0, 0, 0))
                     draw_level_objs()
-
+        if finished:
+            if moving == (0, 0):
+                level_start += 1
+                level = levels[level_start]
+                player_loc = level["start"]
+                level_reset = copy.deepcopy(level["objs"])
+                position = 0
+                history = [(copy.deepcopy(level["objs"]), player_loc, moving, position)]
+                draw_level_tiles()
+                moving = (0, 0)
+                objs_screen.fill((0, 0, 0, 0))
+                draw_level_objs()
+                position = 0
+                finished = False
+            else:
+                fade_screen.fill((69, 43, 63, 255*(1-abs(moving[0]+moving[1])/BLOCK_SIZE)))
+                game_screen.blit(fade_screen, (0, 0))
+        display_screen.blit(pygame.transform.scale(game_screen, (size[0] * scale, size[1] * scale)), (0, 0))
+        pygame.display.flip()
+        await asyncio.sleep(0)
+        clock.tick(fps * BLOCK_SIZE / step_speed)
 
 if __name__ == "__main__":
     asyncio.run(main())
