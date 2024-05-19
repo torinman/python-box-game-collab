@@ -9,11 +9,10 @@ with open("levels.json", "r") as f:
         levels.append(json.loads(line))
 level_start = 0
 editor = False
-level = levels[level_start]
 
 
-def draw_level_tiles():
-    global level, level_screen
+def draw_level_tiles(level):
+    global level_screen
     level_screen = level_screen.convert_alpha()
     level_screen.fill((0, 0, 0, 0))
     for y in range(level["size"][1]):
@@ -22,22 +21,21 @@ def draw_level_tiles():
                               (x * BLOCK_SIZE, y * BLOCK_SIZE))
 
 
-def check_obj(loc):
+def check_obj(loc, level):
     for obj in level["objs"]:
         for part in obj[2]:
             if part[1] + obj[1][1] == loc[1] and part[0] + obj[1][0] == loc[0]:
                 return obj
 
 
-def check_push(loc, v):
-    global level
+def check_push(loc, v, level):
     objs = []
     obj_changes = []
     locations = [] + [loc]
     new_locations = []
     while locations:
         for location in locations:
-            check = check_obj((location[0] + v[0], location[1] + v[1]))
+            check = check_obj((location[0] + v[0], location[1] + v[1]), level)
             if check is not None and check not in objs:
                 objs += [check]
                 remove = []
@@ -62,8 +60,7 @@ def check_push(loc, v):
         new_locations = []
     return objs, obj_changes
 
-
-def get_wall_tile(location, kind):
+def get_wall_tile(location, kind, level):
     tile = 0
     if location[1] != 0:
         if level["wall"][location[1] - 1][location[0]] == kind:
@@ -80,8 +77,8 @@ def get_wall_tile(location, kind):
     return tile
 
 
-def draw_level_objs():
-    global level, objs_screen
+def draw_level_objs(level):
+    global objs_screen
     for y in range(-1, level["size"][1] + 1):
         for obj in level["objs"]:
             for part in obj[2]:
@@ -94,14 +91,14 @@ def draw_level_objs():
             if 0 <= y < level["size"][1]:
                 if level["wall"][y][x] != 0:
                     objs_screen.blit(pygame.image.load(
-                        f"images/wall/{level['wall'][y][x] - 1}/{get_wall_tile((x, y), level['wall'][y][x])}.png"),
+                        f"images/wall/{level['wall'][y][x] - 1}/{get_wall_tile((x, y), level['wall'][y][x], level)}.png"),
                         (x * BLOCK_SIZE, y * BLOCK_SIZE))
 
 
-def move(v, p):
-    global position, player_loc, moving, level, level_start, level_reset, history, finishing, finished
+def move(v, p, level):
+    global position, player_loc, moving, level_start, level_reset, history, finishing, finished
     position = p
-    check = check_push((player_loc[0] - 1, player_loc[1] - 1), v)
+    check = check_push((player_loc[0] - 1, player_loc[1] - 1), v, level)
     if finishing:
         if [player_loc[0] + v[0] - 1, player_loc[1] + v[1] - 1] in level["doors"]:
             finished = True
@@ -132,6 +129,7 @@ ANIMATION_STEPS = 4
 step_speed = 2
 WALL_BUMP = 0
 fps = 3
+position = 0
 
 pygame.init()
 
@@ -143,33 +141,39 @@ keys = []
 display_screen = pygame.display.set_mode((800, 600), flags=pygame.RESIZABLE)
 size = (pygame.display.get_window_size()[0] // scale, pygame.display.get_window_size()[1] // scale)
 game_screen = pygame.Surface(size).convert_alpha()
-level_screen = pygame.Surface((level["size"][0] * BLOCK_SIZE, level["size"][1] * BLOCK_SIZE))
-objs_screen = pygame.Surface((level["size"][0] * BLOCK_SIZE, (level["size"][1] + 0.5) * BLOCK_SIZE))
-objs_screen = objs_screen.convert_alpha()
-objs_screen.fill((0, 0, 0, 0))
-fade_screen = pygame.Surface(size)
-fade_screen = fade_screen.convert_alpha()
-fade_screen.fill((0, 0, 0, 0))
-draw_level_objs()
-player_loc = level["start"]
 pygame.display.set_caption("Mouse Movers")
-level_reset = copy.deepcopy(level["objs"])
-position = 0
-history = [(copy.deepcopy(level["objs"]), player_loc, moving, position)]
-finished = False
 finishing = False
-
-draw_level_tiles()
-backwards = False
+player_loc = (0, 0)
+level_reset = []
+history = []
+finished = False
+level_screen = pygame.Surface((0, 0))
+objs_screen = pygame.Surface((0, 0))
 
 player_images = []
 for i in range((ANIMATION_STEPS + 1) * 4):
     player_images.append(pygame.image.load(f"images/player/{i}.png"))
 
 
-async def main():
-    global done, moving, player_loc, position, game_screen, level_screen, size, history, level, backwards, step_speed, \
-        fps, level_start, finishing, finished, level_reset, objs_screen
+async def play_level(level):
+    global done, moving, size, fps, step_speed, finishing, game_screen, position, player_loc, history, finished, level_reset, level_screen, objs_screen
+    level_screen = pygame.Surface((level["size"][0] * BLOCK_SIZE, level["size"][1] * BLOCK_SIZE))
+    objs_screen = pygame.Surface((level["size"][0] * BLOCK_SIZE, (level["size"][1] + 0.5) * BLOCK_SIZE))
+    objs_screen = objs_screen.convert_alpha()
+    objs_screen.fill((0, 0, 0, 0))
+    fade_screen = pygame.Surface(size)
+    fade_screen = fade_screen.convert_alpha()
+    fade_screen.fill((0, 0, 0, 0))
+    draw_level_objs(level)
+    player_loc = level["start"]
+    level_reset = copy.deepcopy(level["objs"])
+    position = 0
+    history = [(copy.deepcopy(level["objs"]), player_loc, moving, position)]
+    finished = False
+    finishing = False
+
+    draw_level_tiles(level)
+    backwards = False
     while not done:
         game_screen.fill((69, 43, 63, 255))
         draw = False
@@ -179,18 +183,18 @@ async def main():
                     draw = True
         if draw:
             objs_screen.fill((0, 0, 0, 0))
-            draw_level_objs()
+            draw_level_objs(level)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     level["objs"] = copy.deepcopy(level_reset)
-                    draw_level_objs()
+                    draw_level_objs(level)
                     player_loc = level["start"]
                     position = 0
                     objs_screen.fill((0, 0, 0, 0))
-                    draw_level_objs()
+                    draw_level_objs(level)
                 elif event.key == pygame.K_l:
                     step_speed *= 2
                     if step_speed == 32:
@@ -213,7 +217,7 @@ async def main():
                         for index, obj in enumerate(level["objs"]):
                             obj[4] = history[-1][0][index][4]
                         moving = (history[-1][2][0] * -1, history[-1][2][1] * -1)
-                        draw_level_objs()
+                        draw_level_objs(level)
                         player_loc = history[-2][1]
                         position = history[-1][3]
                         history.pop(-1)
@@ -221,13 +225,13 @@ async def main():
                 else:
                     backwards = False
                 if key == pygame.K_RIGHT or key == pygame.K_d:
-                    move((1, 0), 1)
+                    move((1, 0), 1, level)
                 elif key == pygame.K_LEFT or key == pygame.K_a:
-                    move((-1, 0), 2)
+                    move((-1, 0), 2, level)
                 elif key == pygame.K_DOWN or key == pygame.K_s:
-                    move((0, 1), 0)
+                    move((0, 1), 0, level)
                 elif key == pygame.K_UP or key == pygame.K_w:
-                    move((0, -1), 3)
+                    move((0, -1), 3, level)
                 if player_loc != history[-1][1]:
                     history = history + [(copy.deepcopy(level["objs"]), player_loc, moving, position)]
         game_screen.blit(level_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0],
@@ -255,7 +259,7 @@ async def main():
                     obj[2] = new_obj[:]
                     if obj[5] and obj[2]:
                         finishing = False
-                draw_level_objs()
+                draw_level_objs(level)
         if moving[1] != 0:
             moving = (moving[0], moving[1] - step_speed * moving[1] / abs(moving[1]))
             if moving[1] == 0:
@@ -270,24 +274,10 @@ async def main():
                     obj[2] = new_obj[:]
                     if obj[5] and obj[2]:
                         finishing = False
-                draw_level_objs()
+                draw_level_objs(level)
         if finished:
             if moving == (0, 0):
-                level_start += 1
-                level = levels[level_start]
-                player_loc = level["start"]
-                level_screen = pygame.Surface((level["size"][0] * BLOCK_SIZE, level["size"][1] * BLOCK_SIZE))
-                objs_screen = pygame.Surface((level["size"][0] * BLOCK_SIZE, (level["size"][1] + 0.5) * BLOCK_SIZE))
-                level_reset = copy.deepcopy(level["objs"])
-                objs_screen = objs_screen.convert_alpha()
-                position = 0
-                history = [(copy.deepcopy(level["objs"]), player_loc, moving, position)]
-                draw_level_tiles()
-                moving = (0, 0)
-                objs_screen.fill((0, 0, 0, 0))
-                draw_level_objs()
-                position = 0
-                finished = False
+                return 1
             else:
                 fade_screen.fill((69, 43, 63, 255 * (1 - abs(moving[0] + moving[1]) / BLOCK_SIZE)))
                 game_screen.blit(fade_screen, (0, 0))
@@ -295,6 +285,14 @@ async def main():
         pygame.display.flip()
         await asyncio.sleep(0)
         clock.tick(fps * BLOCK_SIZE / step_speed)
+
+
+async def main():
+    global level_start
+    while not done:
+        level = levels[level_start]
+        await play_level(level)
+        level_start += 1
 
 
 if __name__ == "__main__":
