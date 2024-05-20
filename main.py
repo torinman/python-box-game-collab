@@ -60,6 +60,7 @@ def check_push(loc, v, level):
         new_locations = []
     return objs, obj_changes
 
+
 def get_wall_tile(location, kind, level):
     tile = 0
     if location[1] != 0:
@@ -91,7 +92,8 @@ def draw_level_objs(level):
             if 0 <= y < level["size"][1]:
                 if level["wall"][y][x] != 0:
                     objs_screen.blit(pygame.image.load(
-                        f"images/wall/{level['wall'][y][x] - 1}/{get_wall_tile((x, y), level['wall'][y][x], level)}.png"),
+                        f"images/wall/{level['wall'][y][x] - 1}/"
+                        f"{get_wall_tile((x, y), level['wall'][y][x], level)}.png"),
                         (x * BLOCK_SIZE, y * BLOCK_SIZE))
 
 
@@ -156,7 +158,8 @@ for i in range((ANIMATION_STEPS + 1) * 4):
 
 
 async def play_level(level):
-    global done, moving, size, fps, step_speed, finishing, game_screen, position, player_loc, history, finished, level_reset, level_screen, objs_screen
+    global done, moving, size, fps, step_speed, finishing, \
+        game_screen, position, player_loc, history, finished, level_reset, level_screen, objs_screen
     level_screen = pygame.Surface((level["size"][0] * BLOCK_SIZE, level["size"][1] * BLOCK_SIZE))
     objs_screen = pygame.Surface((level["size"][0] * BLOCK_SIZE, (level["size"][1] + 0.5) * BLOCK_SIZE))
     objs_screen = objs_screen.convert_alpha()
