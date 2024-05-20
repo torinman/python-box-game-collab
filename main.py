@@ -174,6 +174,7 @@ async def play_level(level):
 
     draw_level_tiles(level)
     backwards = False
+    fadein = BLOCK_SIZE
     while not done:
         game_screen.fill((69, 43, 63, 255))
         draw = False
@@ -281,6 +282,10 @@ async def play_level(level):
             else:
                 fade_screen.fill((69, 43, 63, 255 * (1 - abs(moving[0] + moving[1]) / BLOCK_SIZE)))
                 game_screen.blit(fade_screen, (0, 0))
+        if fadein:
+            fade_screen.fill((69, 43, 63, 255 * (fadein / BLOCK_SIZE)))
+            game_screen.blit(fade_screen, (0, 0))
+            fadein -= MOVEMENT_SPEED
         display_screen.blit(pygame.transform.scale(game_screen, (size[0] * scale, size[1] * scale)), (0, 0))
         pygame.display.flip()
         await asyncio.sleep(0)
