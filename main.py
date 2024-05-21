@@ -4,9 +4,11 @@ import asyncio
 import copy
 
 levels = []
+num_levels = 0
 with open("levels.json", "r") as f:
     for line in f.readlines():
         levels.append(json.loads(line))
+        num_levels += 1
 level_start = 0
 editor = False
 
@@ -85,7 +87,7 @@ def draw_level_objs(level):
             for part in obj[2]:
                 if part[1] + obj[1][1] == y:
                     objs_screen.blit(
-                        pygame.image.load(f"images/{obj[0]}/{obj[3]}/{obj[2].index(part)}.png"),
+                        pygame.image.load(f"images/objects/{obj[0]}/{obj[3]}/{obj[2].index(part)}.png"),
                         ((part[0] + obj[1][0]) * BLOCK_SIZE + obj[4] * moving[0] * -1,
                          (part[1] + obj[1][1]) * BLOCK_SIZE + obj[4] * moving[1] * -1))
         for x in range(level["size"][0]):
@@ -298,9 +300,12 @@ async def play_level(level):
 async def main():
     global level_start
     while not done:
-        level = levels[level_start]
+        level = copy.deepcopy(levels[level_start])
         await play_level(level)
-        level_start += 1
+        if level_start < num_levels - 1:
+            level_start += 1
+        else:
+            level_start = 0
 
 
 if __name__ == "__main__":
