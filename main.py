@@ -9,8 +9,16 @@ with open("levels.json", "r") as f:
     for line in f.readlines():
         levels.append(json.loads(line))
         num_levels += 1
-level_start = 0
+level_start = 2
 editor = False
+
+with open("images/objects.json", "r") as f:
+    objs_info = json.loads(f.read())
+
+for level in levels:
+    for obj in level["objs"]:
+        if obj[2] == "default":
+            obj[2] = objs_info[obj[0]]["parts"]
 
 
 def draw_level_tiles(level):
@@ -39,6 +47,8 @@ def check_push(loc, v, level):
         for location in locations:
             check = check_obj((location[0] + v[0], location[1] + v[1]), level)
             if check is not None and check not in objs:
+                if check[7]:
+                    return False
                 objs += [check]
                 remove = []
                 for part in check[2]:
@@ -86,10 +96,16 @@ def draw_level_objs(level):
         for obj in level["objs"]:
             for part in obj[2]:
                 if part[1] + obj[1][1] == y:
-                    objs_screen.blit(
-                        pygame.image.load(f"images/objects/{obj[0]}/{obj[3]}/{obj[2].index(part)}.png"),
-                        ((part[0] + obj[1][0]) * BLOCK_SIZE + obj[4] * moving[0] * -1,
-                         (part[1] + obj[1][1]) * BLOCK_SIZE + obj[4] * moving[1] * -1))
+                    if objs_info[obj[0]]["parts"] == "generic":
+                        objs_screen.blit(
+                            pygame.image.load(f"images/objects/{obj[0]}/{obj[3]}/0v{obj[6]}.png"),
+                            ((part[0] + obj[1][0]) * BLOCK_SIZE + obj[4] * moving[0] * -1,
+                             (part[1] + obj[1][1]) * BLOCK_SIZE + obj[4] * moving[1] * -1))
+                    else:
+                        objs_screen.blit(
+                            pygame.image.load(f"images/objects/{obj[0]}/{obj[3]}/{obj[2].index(part)}v{obj[6]}.png"),
+                            ((part[0] + obj[1][0]) * BLOCK_SIZE + obj[4] * moving[0] * -1,
+                             (part[1] + obj[1][1]) * BLOCK_SIZE + obj[4] * moving[1] * -1))
         for x in range(level["size"][0]):
             if 0 <= y < level["size"][1]:
                 if level["wall"][y][x] != 0:

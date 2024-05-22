@@ -1,0 +1,7 @@
+{
+  "box": {"parts": "generic", "variations": 1, "rotations": "generic"},
+  "cardboard_box": {"parts": "generic", "variations": 1, "rotations": 1},
+  "glass_table": {"parts": [[0, 0, false]], "variations": 2, "rotations": 1},
+  "book": {"parts": [[0, 0, false]], "variations": 3, "rotations": 1},
+  "bonsai": {"parts": [[0, 0, false]], "variations": 2, "rotations": 1, "info": "A small tree in a pot. Variations are a white pot and a blue pot"}
+}
