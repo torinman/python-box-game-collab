@@ -15,10 +15,10 @@ editor = False
 with open("images/objects.json", "r") as f:
     objs_info = json.loads(f.read())
 
-for level in levels:
-    for obj in level["objs"]:
-        if obj[2] == "default":
-            obj[2] = objs_info[obj[0]]["parts"]
+for level_edit in levels:
+    for obj_edit in level_edit["objs"]:
+        if obj_edit[2] == "default":
+            obj_edit[2] = objs_info[obj_edit[0]]["parts"]
 
 
 def draw_level_tiles(level):
@@ -175,6 +175,11 @@ for i in range((ANIMATION_STEPS + 1) * 4):
     player_images.append(pygame.image.load(f"images/player/{i}.png"))
 
 
+def edit(level):
+    global done, moving, size, fps, step_speed, finishing, \
+        game_screen, player_loc, level_reset, level_screen, objs_screen
+
+
 async def play_level(level):
     global done, moving, size, fps, step_speed, finishing, \
         game_screen, position, player_loc, history, finished, level_reset, level_screen, objs_screen
@@ -195,7 +200,7 @@ async def play_level(level):
 
     draw_level_tiles(level)
     backwards = False
-    fadein = BLOCK_SIZE
+    fade_in = BLOCK_SIZE
     while not done:
         game_screen.fill((69, 43, 63, 255))
         draw = False
@@ -225,7 +230,7 @@ async def play_level(level):
                     fps += 1
                     if fps == 6:
                         fps = 2
-                keys.append(event.key)
+                keys.insert(0, event.key)
             elif event.type == pygame.KEYUP:
                 keys.remove(event.key)
             elif event.type == pygame.WINDOWRESIZED:
@@ -264,7 +269,7 @@ async def play_level(level):
             image = 0
         image += position * ANIMATION_STEPS + position
         game_screen.blit(player_images[image],
-                         (size[0] // 2 - 0.5 * BLOCK_SIZE, size[1] // 2 - 0.5 * BLOCK_SIZE))
+                         (size[0] // 2 - 0.5 * BLOCK_SIZE, size[1] // 2 - 0.5 * BLOCK_SIZE), )
         game_screen.blit(objs_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0],
                                        size[1] // 2 - (player_loc[1]) * BLOCK_SIZE + moving[1]))
         if moving[0] != 0:
@@ -303,10 +308,10 @@ async def play_level(level):
             else:
                 fade_screen.fill((69, 43, 63, 255 * (1 - abs(moving[0] + moving[1]) / BLOCK_SIZE)))
                 game_screen.blit(fade_screen, (0, 0))
-        if fadein:
-            fade_screen.fill((69, 43, 63, 255 * (fadein / BLOCK_SIZE)))
+        if fade_in:
+            fade_screen.fill((69, 43, 63, 255 * (fade_in / BLOCK_SIZE)))
             game_screen.blit(fade_screen, (0, 0))
-            fadein -= MOVEMENT_SPEED
+            fade_in -= MOVEMENT_SPEED
         display_screen.blit(pygame.transform.scale(game_screen, (size[0] * scale, size[1] * scale)), (0, 0))
         pygame.display.flip()
         await asyncio.sleep(0)
