@@ -2,6 +2,7 @@ import pygame
 import json
 import asyncio
 import copy
+import font
 
 levels = []
 num_levels = 0
@@ -299,6 +300,7 @@ async def play_level(level):
                                        size[1] // 2 - (player_loc[1]) * BLOCK_SIZE + moving[1]))
         game_screen.blit(overlay_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0],
                                        size[1] // 2 - (player_loc[1]) * BLOCK_SIZE + moving[1]))
+        game_screen.blit(font.write("Moving Mouses"), (1, 1))
         if moving[0] != 0:
             moving = (moving[0] - step_speed * moving[0] / abs(moving[0]), moving[1])
             if moving[0] == 0:
