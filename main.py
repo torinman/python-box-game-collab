@@ -349,6 +349,7 @@ async def play_level(level):
             fade_screen.fill((69, 43, 63, 255 * (fade_in / BLOCK_SIZE)))
             game_screen.blit(fade_screen, (0, 0))
             fade_in -= MOVEMENT_SPEED
+        display_screen.fill((69, 43, 63, 255))
         display_screen.blit(pygame.transform.scale(game_screen, (size[0] * scale, size[1] * scale)), (0, 0))
         pygame.display.flip()
         await asyncio.sleep(0)
