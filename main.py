@@ -10,8 +10,9 @@ with open("levels.json", "r") as f:
     for line in f.readlines():
         levels.append(json.loads(line))
         num_levels += 1
-level_start = 1
+level_start = 0
 editor = False
+wordsfornumbers = {2: "two", 1: "one", 3: "three"}
 
 with open("images/objects.json", "r") as f:
     objs_info = json.loads(f.read())
@@ -31,20 +32,31 @@ def draw_level_tiles(level):
             level_screen.blit(pygame.image.load(f"images/tiles/{level['tile'][y][x]}.png"),
                               (x * BLOCK_SIZE, y * BLOCK_SIZE))
 
+
 def draw_level_overlay(level):
-    global overlay_screen
-    overlay_screen = overlay_screen.convert_alpha()
-    overlay_screen.fill((0, 0, 0, 0))
     for y in range(level["size"][1]):
         for x in range(level["size"][0]):
             if [x + 1, y] in level["doors"]:
-                objs_screen.blit(pygame.image.load("images/door/0.png"), (x * BLOCK_SIZE, y * BLOCK_SIZE))
+                objs_screen.blit(pygame.image.load("images/door/0u.png"), (x * BLOCK_SIZE, y * BLOCK_SIZE))
             if [x - 1, y] in level["doors"]:
-                objs_screen.blit(pygame.image.load("images/door/2.png"), (x * BLOCK_SIZE, y * BLOCK_SIZE))
+                objs_screen.blit(pygame.image.load("images/door/2u.png"), (x * BLOCK_SIZE, y * BLOCK_SIZE))
             if [x, y + 1] in level["doors"]:
-                objs_screen.blit(pygame.image.load("images/door/3.png"), (x * BLOCK_SIZE, y * BLOCK_SIZE))
+                objs_screen.blit(pygame.image.load("images/door/3u.png"), (x * BLOCK_SIZE, y * BLOCK_SIZE))
             if [x, y - 1] in level["doors"]:
-                objs_screen.blit(pygame.image.load("images/door/1.png"), (x * BLOCK_SIZE, y * BLOCK_SIZE))
+                objs_screen.blit(pygame.image.load("images/door/1u.png"), (x * BLOCK_SIZE, y * BLOCK_SIZE))
+
+
+def draw_level_underlay(level):
+    for y in range(level["size"][1]):
+        for x in range(level["size"][0]):
+            if [x + 1, y] in level["doors"]:
+                objs_screen.blit(pygame.image.load("images/door/0d.png"), (x * BLOCK_SIZE, y * BLOCK_SIZE))
+            if [x - 1, y] in level["doors"]:
+                objs_screen.blit(pygame.image.load("images/door/2d.png"), (x * BLOCK_SIZE, y * BLOCK_SIZE))
+            if [x, y + 1] in level["doors"]:
+                objs_screen.blit(pygame.image.load("images/door/3d.png"), (x * BLOCK_SIZE, y * BLOCK_SIZE))
+            if [x, y - 1] in level["doors"]:
+                objs_screen.blit(pygame.image.load("images/door/1d.png"), (x * BLOCK_SIZE, y * BLOCK_SIZE))
 
 
 def check_obj(loc, level):
@@ -178,7 +190,8 @@ keys = []
 display_screen = pygame.display.set_mode((800, 600), flags=pygame.RESIZABLE)
 size = (pygame.display.get_window_size()[0] // scale, pygame.display.get_window_size()[1] // scale)
 game_screen = pygame.Surface(size).convert_alpha()
-pygame.display.set_caption("Mouse Movers")
+pygame.display.set_caption("Moving Mouses")
+pygame.display.set_allow_screensaver(True)
 finishing = False
 player_loc = (0, 0)
 level_reset = []
@@ -206,9 +219,6 @@ async def play_level(level):
     objs_screen = pygame.Surface((level["size"][0] * BLOCK_SIZE, (level["size"][1] + 0.5) * BLOCK_SIZE))
     objs_screen = objs_screen.convert_alpha()
     objs_screen.fill((0, 0, 0, 0))
-    overlay_screen = pygame.Surface((level["size"][0] * BLOCK_SIZE, (level["size"][1] + 0.5) * BLOCK_SIZE))
-    overlay_screen = overlay_screen.convert_alpha()
-    overlay_screen.fill((0, 0, 0, 0))
     fade_screen = pygame.Surface(size)
     fade_screen = fade_screen.convert_alpha()
     fade_screen.fill((0, 0, 0, 0))
@@ -220,6 +230,7 @@ async def play_level(level):
     finished = False
     finishing = False
     draw_level_overlay(level)
+    level_text = font.write("level "+wordsfornumbers[level_start+1])
 
     draw_level_tiles(level)
     backwards = False
@@ -231,8 +242,6 @@ async def play_level(level):
             for obj in level["objs"]:
                 if obj[4]:
                     draw = True
-        #if draw:
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
@@ -292,15 +301,14 @@ async def play_level(level):
             image = 0
         image += position * ANIMATION_STEPS + position
         objs_screen.fill((0, 0, 0, 0))
+        draw_level_underlay(level)
         draw_level_objs(level)
         draw_level_overlay(level)
         # game_screen.blit(player_images[image],
         #                  (size[0] // 2 - 0.5 * BLOCK_SIZE, size[1] // 2 - 0.5 * BLOCK_SIZE), )
         game_screen.blit(objs_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0],
                                        size[1] // 2 - (player_loc[1]) * BLOCK_SIZE + moving[1]))
-        game_screen.blit(overlay_screen, (size[0] // 2 - (player_loc[0] - 0.5) * BLOCK_SIZE + moving[0],
-                                       size[1] // 2 - (player_loc[1]) * BLOCK_SIZE + moving[1]))
-        game_screen.blit(font.write("Moving Mouses"), (1, 1))
+        game_screen.blit(level_text, (1, 1))
         if moving[0] != 0:
             moving = (moving[0] - step_speed * moving[0] / abs(moving[0]), moving[1])
             if moving[0] == 0:
